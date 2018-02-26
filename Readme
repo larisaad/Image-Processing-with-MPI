@@ -1,0 +1,138 @@
+334CC Tema 3 APD
+Danaila Larisa Andreea
+
+1. DESCRIERE SOLUTIE
+
+Citire date:
+
+In readNeighbors citesc din fisierul de topologie, doar linia/ lista de adiacenta respectiva 
+rankului curent. Celelate linii sunt ignorate la fiecare citire. Retin lista de adiacenta 
+(neighbors) si numarul vecinilor.
+
+In readImagesFile citesc numele imaginilor, filtrele, respectiv numele fisierului de output si le
+retin intr-un vector de structuri Image pentru a lucra mai usor cu caracteristicile unei imagini.
+
+readPixels este apelat doar de catre procesul cu rankul 0, pentru fiecare imagine in parte. 
+readPixels citeste dupa standardul pgm: prima linie a fisierului, oricate comentarii, linia cu W si
+H, linia cu 255 si, apoi, W*H pixeli. Retin prima linie a fisierului si comentariile in structura 
+Image pentru a le insera in imaginea de output.
+
+writePixels se foloseste de Image pentru a printa prima linie si comentariile urmate de W, H, 255 si
+matricea de pixeli primita ca parametru.
+
+Procesul cu rankul 0 - va citi imaginea curenta si va borda matricea imaginii curente cu 0. Matricea
+bordata este impartita copiiilor lui 0. Un copil primeste diviziunea lui din matrice 
+(linii/ numar copii), plus o linie inaintea primei linii din diviziune si o linie dupa ultima linie 
+din diviziune. Diviziunile trimise de mine sunt de tipul [from, to). Eu trimit un "chunk" de matrice
+ce contine si liniile de mai sus, asa ca voi trimite tot timpul [from, to + 1) (from e initial 0, 
+matricea e bordata), si urmatoarea diviziune va fi [to - 1, to + 1 + linii/ numar copii).
+
+Ultimul copil primeste linii - (cat s-a trimis pana acum).
+In afara de bucatile de matrice, trimit catre copii si indecsii (initial) ai primei linii si ai 
+ultimei linii, si widthul imaginii.
+
+Procesele care nu sunt frunze - primesc informatiile de la parinti si fac diviziunea catre copiii,
+in acelasi mod ca mai sus.
+
+Frunzele - primesc imaginile, aplica filtrele si trimit inapoi matricea procesata de la linia 1 pana
+la penultima linie, adica elimina acele 2 linii necesare pentru procesare.
+
+Aplicarea filtrelor - inmultesc matricea corespunzatoare filtrului cu pixelul curent si vecinii
+pixelului curent (de ex. incepand cu copy_img[k - 1][l - 1] * filter[0][0]), impart la factorul de 
+divizare si adun deplasamentul. Aduc catre valorile 0 sau 255, daca rezultatul caculului depaseste
+acest interval.
+
+Procesele care nu sunt frunze - primesc inapoi informatiile de la copii intr-o matrice mai mica cu 2
+linii decat matricea initiala, deoarece frunzele elimia orice linie trimisa in plus, in asa fel incat
+procesele intermediare doar lipesc imaginile primite de la frunze si le trimit mai departe.
+
+Procesul cu rank 0 - lipeste si el partile rezultate de la copii intr-o matrice care va avea 
+(height - 2) linii. 
+
+Se scrie imaginea rezultata in fisier. Se trece la urmatoarea.
+
+Statistica:
+
+Cand imaginele au fost procesate se trimite un tag de terminare.
+Cand tagul ajunge la frunze, ele isi trimit liniile procesate, pe care le am retinut intr-o variabila,
+catre parinti, sub forma de sir de caractere r/l; (r = rank, l = nr. de linii).
+Un proces intermediar isi scrie toate sirurile primite de la copii, intr-un singur buffer pe care il 
+trimite catre parinte.
+Procesul cu rank 0 va avea de parsat un sir de caractere de acest tip: r/l;r/l;r/l;r/l;r/l;
+Ma folosesc de structura Info pentru a retine o pereche de numere naturale (r si l).
+Dupa parsarea bufferului, imi creez un vector de Info pentru a-mi stoca informatiile din buffer.
+Sortez crescator acest vector.
+
+writeStatistics parcurge toate nodurile (de la 0) pana la ultimul nod din vectorul de Info. 
+Daca nodul se afla in vectorul de Info, atunci ii scriu in fisier numarul de linii corespunzatoare,
+altfel, scriu in fisier 0, pentru ca asta inseamna ca nu a fost frunza.
+
+2. TESTARE
+
+Imaginile sunt procesate corect, am comparat cu outputurile din resurse si, de asemenea,
+am comparat hashurile imaginilor procesate de mine cu hashurile altor colegi.
+
+Rezultatele din statistica.out dupa rularea smoke_test:
+0: 0
+1: 0
+2: 0
+3: 1316
+4: 0
+5: 1320
+6: 1324
+7: 2640
+8: 0
+9: 660
+10: 660
+11: 2640
+
+Se observa ca 3 proceseaza cu 4 linii mai putin decat ar fi trebuit si ca 6 proceseaza cu 4 linii
+mai mult. Asta se datoreaza faptului ca eu am facut o impartire mai dubioasa care presupune
+ca primul copil sa primeasca cu 1 linie mai putin decat trebuie, si astfel, ultimul nod proceseaza
+cu una mai mult. Datorita faptului ca se proceseaza 4 imagini, este acea diferenta de 4 linii.
+Eu am inteles anumite aspecte ale temei prost la inceput, iar pe parcurs, a trebuit sa imi adaptez
+solutia. De aceasta a rezultat aceasta impartire un pic inegala. 
+
+Tin sa mentionez ca imaginile sunt procesate corect, iar eu cred ca tema mea indeplindeste scopul 
+temei, si cu aceasta mica diferenta in algoritm. 
+
+Rezultatele din statistica.out dupa rularea pe fep (q: ibm-nehalem.q ) a celor 42 de imagini folosind
+topologia cu 29 de noduri: 
+
+0: 0
+1: 0
+2: 0
+3: 13922
+4: 0
+5: 13964
+6: 13992
+7: 27920
+8: 0
+9: 6976
+10: 6988
+11: 0
+12: 0
+13: 9320
+14: 9330
+15: 0
+16: 1320
+17: 0
+18: 1320
+19: 1320
+20: 0
+21: 1400
+22: 630
+23: 648
+24: 0
+25: 672
+26: 648
+27: 672
+28: 648
+
+
+
+
+
+
+
+
